@@ -95,40 +95,26 @@
       display:flex; flex-direction:column; gap:10px;
     }
     
-    /* === LAYOUT FIX: Changed to PiP layout === */
+    /* VIDEO GRID (PiP Style) */
     .videoGrid{
       flex:1;
-      position:relative; /* Changed from flex */
+      position:relative; 
     }
     .remoteVideoWrap {
-      position: absolute; /* Fills parent */
-      inset: 0;
-      background: #000;
-      border-radius: 12px;
-      overflow: hidden;
+      position: absolute; inset: 0;
+      background: #000; border-radius: 12px; overflow: hidden;
       border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
     }
     .localVideoWrap {
-      position: absolute; /* Sits on top */
-      z-index: 10;
-      bottom: 10px;
-      right: 10px;
-      width: 30%;
-      max-width: 160px;
-      min-width: 100px;
+      position: absolute; z-index: 10;
+      bottom: 10px; right: 10px;
+      width: 30%; max-width: 160px; min-width: 100px;
       aspect-ratio: 4/3;
-      background: #000;
-      border-radius: 12px;
-      overflow: hidden;
+      background: #000; border-radius: 12px; overflow: hidden;
       border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
     }
-    /* === End Layout Fix === */
     
     video{
       width:100%; height:100%; object-fit:cover; background:#000;
@@ -285,24 +271,22 @@
     const state = e.data;
     const t = player.getCurrentTime();
 
-    // === SYNC FIX: Also send sync on BUFFERING (state 3) which fires after a seek ===
+    // === SYNC LOGIC ===
     if (state === YT.PlayerState.PLAYING){
       conn.send({type:'sync', action:'play', time:t, vid:currentVideoId});
     } else if (state === YT.PlayerState.PAUSED){
       conn.send({type:'sync', action:'pause', time:t, vid:currentVideoId});
     } else if (state === YT.PlayerState.BUFFERING){
-      // When host seeks, player buffers. Send a 'pause' sync to force guest to seek.
+      // Catch seek events
       conn.send({type:'sync', action:'pause', time:t, vid:currentVideoId});
     }
   }
 
   function parseYouTubeId(urlOrId){
-    // Accept raw ID or full URL
     if (!urlOrId) return null;
     const idRegex = /(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{6,})/;
     const m = urlOrId.match(idRegex);
     if (m && m[1]) return m[1];
-    // if looks like bare id
     if (/^[A-Za-z0-9_-]{6,}$/.test(urlOrId)) return urlOrId;
     return null;
   }
@@ -320,7 +304,7 @@
     player.loadVideoById(vid);
     conn && conn.send({type:'cmd', cmd:'load', vid});
 
-    // === INPUT FIX: Clear input field after loading ===
+    // Clear input after load
     ytInput.value = '';
   }
 
@@ -334,7 +318,6 @@
   function applySync(msg){
     if (!ytReady) return;
 
-    // If host changed video, sync to same one
     if (msg.vid && msg.vid !== currentVideoId){
       currentVideoId = msg.vid;
       player.loadVideoById(currentVideoId);
@@ -344,7 +327,6 @@
     const target = msg.time || 0;
     const diff = Math.abs(player.getCurrentTime() - target);
     
-    // isSeeking flag here prevents a sync-loop if the seek is slow
     if (diff > 0.5 && !isSeeking){ 
       isSeeking = true;
       player.seekTo(target, true);
@@ -370,7 +352,7 @@
       wireConnection();
       toSession('host');
       
-      // === SYNC FIX: Send current state to new guest ===
+      // Send initial sync to new guest
       if (ytReady && currentVideoId){
         setTimeout(() => {
           conn.send({
@@ -379,7 +361,7 @@
             time: player.getCurrentTime(),
             vid: currentVideoId
           });
-        }, 500); // Give guest a moment to initialize
+        }, 500); 
       }
     });
   };
@@ -404,6 +386,12 @@
         wireConnection();
         toSession('guest');
       });
+      conn.on('error', (err) => {
+        showConnect('Connection Error: ' + err);
+      });
+    });
+    peer.on('error', (err) => {
+      showConnect('Peer Error: ' + err);
     });
   }
 
@@ -412,9 +400,7 @@
       if (data.type === 'cmd' && data.cmd === 'load'){
         guestLoadVideo(data.vid);
       } else if (data.type === 'sync'){
-        if (!isHost) { // Guests apply sync
-          applySync(data);
-        }
+        if (!isHost) applySync(data);
       }
     });
     conn.on('close', () => {
@@ -448,7 +434,6 @@
     }
   }
 
-  // Host answers calls
   function setupCallHandlers(){
     peer.on('call', async call => {
       try{
@@ -465,10 +450,9 @@
     });
   }
 
-  // Guest starts call to host
   async function startCall(){
     if (!peer || !conn) return;
-    const targetId = conn.peer; // host's PeerJS id
+    const targetId = conn.peer; 
     try{
       const stream = await ensureLocalStream();
       const call = peer.call(targetId, stream);
@@ -487,16 +471,15 @@
 
   startCallBtn.onclick = async () => {
     if (!peer) return;
-    // Guest initiates call (host will only answer)
     if (!isHost){
       await startCall();
     }else{
-      // host wants to see self even before call
       await ensureLocalStream();
     }
   };
 
-  toggleMMuteBtn.onclick = () => {
+  // FIXED: Corrected typo here
+  toggleMuteBtn.onclick = () => {
     if (!localStream) return;
     const audioTracks = localStream.getAudioTracks();
     if (!audioTracks.length) return;
@@ -516,7 +499,6 @@
 
   endCallBtn.onclick = () => {
     cleanupCall();
-    // Also stop local camera
     if (localStream){
       localStream.getTracks().forEach(t=>t.stop());
       localStream = null;
