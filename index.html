@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Watch YouTube Together + Video Call + Chat</title>
+  <title>Watch YouTube + Chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <style>
     :root {
@@ -74,7 +74,6 @@
     }
     .btn-primary { background: var(--accent); color: #001218; border-color: transparent; }
     .btn-sm { padding: 10px 12px; min-width: 96px; }
-    .btn-danger { background: #ff4b6f; border-color: transparent; color: #fff; }
     
     input[type=text] {
       width: 100%;
@@ -111,7 +110,7 @@
     .sub { color: var(--muted); font-size: 13px; text-align: center; }
     .row { display: flex; gap: 8px; align-items: center; }
     .row input { flex: 1; }
-    .row.join-row { flex-wrap: wrap; } /* Allow wrap for join */
+    .row.join-row { flex-wrap: wrap; }
     .row.join-row input[type=text] { min-width: 150px; }
     .row.join-row input#guestNameInput { flex-grow: 1; }
     .row.join-row input#roomId { flex-grow: 2; }
@@ -169,7 +168,7 @@
     }
     .urlBar input { flex: 1; }
 
-    /* === CALL/CHAT PANE (RIGHT) === */
+    /* === CHAT PANE (RIGHT) === */
     .right {
       display: flex;
       flex-direction: column;
@@ -180,103 +179,6 @@
       .right { border-left: none; border-top: 1px solid var(--border); }
     }
 
-    /* --- TAB CONTROLS --- */
-    .right-tabs {
-      display: flex;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 10px;
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-    }
-    .tab-btn:hover { color: var(--text); }
-    .tab-btn.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-    }
-
-    /* --- CALL PANE --- */
-    .callPane {
-      flex: 1;
-      position: relative;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      min-height: 0;
-    }
-    .videoGrid {
-      flex: 1;
-      position: relative;
-    }
-    .remoteVideoWrap {
-      position: absolute;
-      inset: 0;
-      background: #000;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .localVideoWrap {
-      position: absolute;
-      z-index: 10;
-      bottom: 10px;
-      right: 10px;
-      width: 30%;
-      max-width: 160px;
-      min-width: 100px;
-      aspect-ratio: 4/3;
-      background: #000;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      background: #000;
-    }
-    .label {
-      position: absolute;
-      top: 6px;
-      left: 8px;
-      padding: 2px 6px;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, .6);
-      color: #f1f5f9;
-      font-size: 11px;
-    }
-    .controls {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      padding-top: 4px;
-      flex-shrink: 0;
-    }
-    .hint {
-      text-align: center;
-      font-size: 12px;
-      color: var(--muted);
-      flex-shrink: 0;
-    }
-
-    /* --- CHAT PANE --- */
     .chatPane {
       flex: 1;
       display: flex;
@@ -378,8 +280,8 @@
 
 <section id="connectScreen" class="connectScreen">
   <div class="connect">
-    <div class="title">📺 YouTube Watch + Call + Chat</div>
-    <div class="sub">Host loads a YouTube link. Watch, talk, and chat in sync.</div>
+    <div class="title">📺 YouTube Watch + Chat</div>
+    <div class="sub">Host loads a YouTube link. Watch and chat in sync.</div>
 
     <button id="createBtn" class="btn btn-primary">Create Room (Host)</button>
 
@@ -409,34 +311,7 @@
   </div>
 
   <div class="right">
-    <div class="right-tabs">
-      <button id="showCallBtn" class="tab-btn active">Call</button>
-      <button id="showChatBtn" class="tab-btn">Chat</button>
-    </div>
-
-    <div id="callPane" class="callPane">
-      <div class="videoGrid">
-        <div class="remoteVideoWrap">
-          <span class="label">Peer</span>
-          <video id="remoteVideo" playsinline autoplay></video>
-        </div>
-        <div class="localVideoWrap">
-          <span class="label">You</span>
-          <video id="localVideo" muted playsinline autoplay></video>
-        </div>
-      </div>
-      <div class="controls">
-        <button id="startCallBtn" class="btn btn-primary btn-sm">Start Call</button>
-        <button id="toggleMuteBtn" class="btn btn-sm">Mute</button>
-        <button id="toggleCamBtn" class="btn btn-sm">Camera Off</button>
-        <button id="endCallBtn" class="btn btn-danger btn-sm">End</button>
-      </div>
-      <div class="hint">
-        Join → hit “Start Call” → host pastes YouTube link → both watch & talk.
-      </div>
-    </div>
-
-    <div id="chatPane" class="chatPane hidden">
+    <div id="chatPane" class="chatPane">
       <div id="messages"></div>
       <div class="composer">
         <input id="msgInput" type="text" placeholder="Message…" />
@@ -458,20 +333,6 @@
   const ytInput = $('ytInput');
   const loadBtn = $('loadBtn');
   const roomIdInput = $('roomId');
-
-  // Video Call elements
-  const localVideo = $('localVideo');
-  const remoteVideo = $('remoteVideo');
-  const startCallBtn = $('startCallBtn');
-  const toggleMuteBtn = $('toggleMuteBtn');
-  const toggleCamBtn = $('toggleCamBtn');
-  const endCallBtn = $('endCallBtn');
-
-  // Tab & Pane elements
-  const callPane = $('callPane');
-  const chatPane = $('chatPane');
-  const showCallBtn = $('showCallBtn');
-  const showChatBtn = $('showChatBtn');
   
   // Chat elements
   const messages = $('messages');
@@ -484,10 +345,6 @@
   let isHost = false;
   let myName = 'Host';
   let peerName = 'Guest';
-
-  // WebRTC / PeerJS media
-  let localStream = null;
-  let currentCall = null;
 
   // YouTube
   let player = null;
@@ -512,20 +369,6 @@
       window.onYouTubeIframeAPIReady = () => createPlayer(role);
     }
   }
-
-  // === Tab Toggling ===
-  showCallBtn.onclick = () => {
-    callPane.classList.remove('hidden');
-    chatPane.classList.add('hidden');
-    showCallBtn.classList.add('active');
-    showChatBtn.classList.remove('active');
-  };
-  showChatBtn.onclick = () => {
-    callPane.classList.add('hidden');
-    chatPane.classList.remove('hidden');
-    showCallBtn.classList.remove('active');
-    showChatBtn.classList.add('active');
-  };
 
   // === Chat Functions ===
   function escapeHtml(s) { return s.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': m === '"' ? '&quot;' : '&#39;' }[m])) }
@@ -831,109 +674,8 @@
     });
   }
 
-  // === Media (WebRTC) ===
-  async function ensureLocalStream() {
-    if (localStream) return localStream;
-    try {
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localVideo.srcObject = localStream;
-      return localStream;
-    } catch (err) {
-      console.error('getUserMedia error', err);
-      alert('Could not access camera/microphone.');
-      throw err;
-    }
-  }
-
-  function cleanupCall() {
-    if (currentCall) {
-      currentCall.close();
-      currentCall = null;
-    }
-    if (remoteVideo.srcObject) {
-      remoteVideo.srcObject.getTracks().forEach(t => t.stop());
-      remoteVideo.srcObject = null;
-    }
-  }
-
-  function setupCallHandlers() {
-    peer.on('call', async call => {
-      try {
-        const stream = await ensureLocalStream();
-        call.answer(stream);
-        currentCall = call;
-        call.on('stream', remoteStream => {
-          remoteVideo.srcObject = remoteStream;
-        });
-        call.on('close', () => { cleanupCall(); });
-      } catch (e) {
-        console.error(e);
-      }
-    });
-  }
-
-  async function startCall() {
-    if (!peer || !conn) return;
-    const targetId = conn.peer;
-    try {
-      const stream = await ensureLocalStream();
-      const call = peer.call(targetId, stream);
-      currentCall = call;
-      call.on('stream', remoteStream => {
-        remoteVideo.srcObject = remoteStream;
-      });
-      call.on('close', () => { cleanupCall(); });
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
   // === Buttons ===
   loadBtn.onclick = hostLoadVideo;
-
-  startCallBtn.onclick = async () => {
-    if (!peer) return;
-    if (!isHost) {
-      await startCall();
-    } else {
-      await ensureLocalStream();
-    }
-  };
-
-  toggleMuteBtn.onclick = () => {
-    if (!localStream) return;
-    const audioTracks = localStream.getAudioTracks();
-    if (!audioTracks.length) return;
-    const enabled = audioTracks[0].enabled;
-    audioTracks.forEach(t => t.enabled = !enabled);
-    toggleMuteBtn.textContent = enabled ? 'Unmute' : 'Mute';
-  };
-
-  toggleCamBtn.onclick = () => {
-    if (!localStream) return;
-    const videoTracks = localStream.getVideoTracks(); // <-- Fixed: was getAudioTracks
-    if (!videoTracks.length) return;
-    const enabled = videoTracks[0].enabled;
-    videoTracks.forEach(t => t.enabled = !enabled);
-    toggleCamBtn.textContent = enabled ? 'Camera On' : 'Camera Off';
-  };
-
-  endCallBtn.onclick = () => {
-    cleanupCall();
-    if (localStream) {
-      localStream.getTracks().forEach(t => t.stop());
-      localStream = null;
-      localVideo.srcObject = null;
-    }
-  };
-
-  // Init: when peer is created, also prep call handlers
-  const origPeer = Peer;
-  Peer = function(...args) {
-    const p = new origPeer(...args);
-    p.on('open', () => { setupCallHandlers(); });
-    return p;
-  };
   
   /* ===== Keyboard Aware Chat ===== */
   (function setupKeyboardAwareChat() {
