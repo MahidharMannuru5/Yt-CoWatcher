@@ -21,7 +21,7 @@
       line-height:1.4;
       padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
       overscroll-behavior:contain;
-      overflow:hidden; /* single screen app */
+      overflow:hidden; /* single-screen app */
     }
     .hidden{display:none !important}
 
@@ -225,7 +225,7 @@
         <button id="endCallBtn"   class="btn btn-danger btn-sm">End</button>
       </div>
       <div class="hint">
-        1) Create / Join → 2) Click “Start Call” (allow camera & mic) → 3) Host pastes YouTube link.
+        1) Create / Join → 2) Click “Start Call” (allow camera & mic) → 3) Host pastes YouTube link & clicks Load.
       </div>
     </div>
   </div>
@@ -264,9 +264,10 @@
   let currentCall  = null;
 
   // YouTube
-  let player       = null;
-  let ytReady      = false;
+  let player         = null;
+  let ytReady        = false;
   let currentVideoId = null;
+  let pendingVideoId = null; // if user clicks Load before API ready
 
   // ---------- UI HELPERS ----------
   function showConnect(msg){ connectLog.textContent = msg || ''; }
@@ -282,6 +283,7 @@
 
   // ---------- YOUTUBE ----------
   window.onYouTubeIframeAPIReady = function(){
+    console.log('YT API ready');
     player = new YT.Player('ytPlayer', {
       height: '100%',
       width:  '100%',
@@ -299,8 +301,17 @@
   };
 
   function onPlayerReady(){
+    console.log('YT player ready');
     ytReady = true;
     setStatus('Idle');
+
+    // if host clicked Load before YT was ready
+    if (pendingVideoId){
+      console.log('Loading pending video', pendingVideoId);
+      currentVideoId = pendingVideoId;
+      player.loadVideoById(currentVideoId);
+      pendingVideoId = null;
+    }
   }
 
   function onPlayerStateChange(e){
@@ -327,26 +338,47 @@
   }
 
   function hostLoadVideo(){
-    if (!isHost || !ytReady) return;
+    if (!isHost){
+      alert('Only the host can load a video.');
+      return;
+    }
+
     const raw = ytInput.value.trim();
     const vid = parseYouTubeId(raw);
     if (!vid){
       alert('Invalid YouTube URL or ID');
       return;
     }
-    currentVideoId = vid;
-    setStatus('Loading…');
-    player.loadVideoById(vid);
+    console.log('Host load video', vid);
+
+    // if player not ready yet, queue it
+    if (!ytReady){
+      pendingVideoId = vid;
+      setStatus('Waiting for YouTube…');
+    } else {
+      currentVideoId = vid;
+      setStatus('Loading…');
+      player.loadVideoById(vid);
+    }
+
+    // send to peer
     if (conn){
       conn.send({type:'cmd', cmd:'load', vid});
     }
   }
 
   function guestLoadVideo(vid){
-    if (!ytReady || !vid) return;
+    if (!vid) return;
+    console.log('Guest load video', vid);
     currentVideoId = vid;
-    setStatus('Loading…');
-    player.loadVideoById(vid);
+
+    if (!ytReady){
+      pendingVideoId = vid;
+      setStatus('Waiting for YouTube…');
+    } else {
+      setStatus('Loading…');
+      player.loadVideoById(vid);
+    }
   }
 
   function applySync(msg){
@@ -370,15 +402,24 @@
     }
   }
 
+  // enter key on input
+  ytInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      hostLoadVideo();
+    }
+  });
+
   // ---------- PEERJS CONNECT FLOW ----------
   createBtn.onclick = () => {
     isHost = true;
     peer = new Peer();
     peer.on('open', id => {
+      console.log('Host Peer ID:', id);
       showConnect('Room ID: ' + id);
       setupCallHandlers();
     });
     peer.on('connection', c => {
+      console.log('Host got connection from', c.peer);
       conn = c;
       wireConnection();
       toSession('host');
@@ -403,6 +444,7 @@
       setupCallHandlers();
       conn = peer.connect(id);
       conn.on('open', () => {
+        console.log('Guest connected to', id);
         wireConnection();
         toSession('guest');
       });
@@ -426,13 +468,12 @@
   async function ensureLocalStream(){
     if (localStream) return localStream;
     try{
-      // CAMERA + MIC (this is the “talk + see each other” part)
       localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
       localVideo.srcObject = localStream;
       return localStream;
     }catch(err){
       console.error('getUserMedia error', err);
-      alert('Could not access camera/microphone. Check permissions / HTTPS.');
+      alert('Could not access camera/microphone. Use https and allow permissions.');
       throw err;
     }
   }
@@ -453,6 +494,7 @@
     if (!peer) return;
     peer.on('call', async call => {
       try{
+        console.log('Incoming call from', call.peer);
         const stream = await ensureLocalStream();
         call.answer(stream);
         currentCall = call;
@@ -466,11 +508,12 @@
     });
   }
 
-  // guest (or anyone) starts call to the other side
+  // start call to other side
   async function startCall(){
     if (!peer || !conn) return;
     const targetId = conn.peer;
     try{
+      console.log('Starting call to', targetId);
       const stream = await ensureLocalStream();
       const call = peer.call(targetId, stream);
       currentCall = call;
@@ -487,9 +530,10 @@
   loadBtn.onclick = hostLoadVideo;
 
   startCallBtn.onclick = async () => {
-    if (!peer) return;
-    // both sides set up handlers; the one who clicks Start will call the peer
-    if (!localStream) await ensureLocalStream();
+    if (!peer) {
+      alert('Create or Join a room first.');
+      return;
+    }
     await startCall();
   };
 
