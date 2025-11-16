@@ -30,7 +30,6 @@
       background:#0f1116; color:var(--text); font-weight:600; font-size:14px;
       cursor:pointer; line-height:1; white-space:nowrap;
     }
-    /* Add disabled styles */
     .btn:disabled{
       background:var(--border); color:var(--muted); cursor:not-allowed;
     }
@@ -146,8 +145,7 @@
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
-  <script src="https://www.youtube.com/iframe_api"></script>
-</head>
+  </head>
 <body>
 
 <section id="connectScreen" class="connectScreen">
@@ -249,11 +247,11 @@
     connectScreen.classList.add('hidden');
     sessionScreen.classList.remove('hidden');
     roleBadge.textContent = role === 'host' ? 'Host' : 'Guest';
-    // This CSS hide/show is what lets the 'onPlayerReady' fix work
     urlBar.style.display = role === 'host' ? 'flex' : 'none';
   }
 
   // === YouTube IFrame API ===
+  // This function will be called by the API script once it loads
   window.onYouTubeIframeAPIReady = function(){
     player = new YT.Player('ytPlayer', {
       height: '100%',
@@ -271,12 +269,11 @@
     });
   };
 
-  // === JS FIX: Enable controls only when YT player is ready ===
   function onPlayerReady(){
     ytReady = true;
     setStatus('Idle');
     
-    // Now that the player is ready, enable the inputs
+    // Enable controls
     ytInput.disabled = false;
     loadBtn.disabled = false;
     ytInput.placeholder = 'Paste YouTube URL or ID (Host only)';
@@ -284,7 +281,7 @@
 
   function onPlayerStateChange(e){
     if (!conn || !ytReady || !currentVideoId) return;
-    if (!isHost) return; // only host drives sync
+    if (!isHost) return; 
 
     const state = e.data;
     const t = player.getCurrentTime();
@@ -308,7 +305,6 @@
   }
 
   function hostLoadVideo(){
-    // This check is what was failing before. Now it will pass.
     if (!isHost || !ytReady) return; 
     
     const raw = ytInput.value.trim();
@@ -505,7 +501,7 @@
 
   toggleCamBtn.onclick = () => {
     if (!localStream) return;
-    const videoTracks = localStream.getVideoTracks();
+    const videoTracks = localStream.getAudioTracks();
     if (!videoTracks.length) return;
     const enabled = videoTracks[0].enabled;
     videoTracks.forEach(t => t.enabled = !enabled);
@@ -529,5 +525,8 @@
     return p;
   };
 </script>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+
 </body>
 </html>
