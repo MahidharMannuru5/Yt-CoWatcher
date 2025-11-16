@@ -18,20 +18,23 @@
     body{
       margin:0; background:var(--bg); color:var(--text);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      line-height:1.4; overflow:hidden;
+      line-height:1.4;
       padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
       overscroll-behavior:contain;
+      overflow:hidden; /* single screen app */
     }
     .hidden{display:none !important}
 
     .btn{
       display:inline-flex; align-items:center; justify-content:center;
-      padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+      padding:9px 12px; border-radius:10px; border:1px solid var(--border);
       background:#0f1116; color:var(--text); font-weight:600; font-size:14px;
       cursor:pointer; line-height:1; white-space:nowrap;
     }
     .btn-primary{background:var(--accent); color:#001218; border-color:transparent}
-    .btn-sm{padding:10px 12px; min-width:96px}
+    .btn-sm{padding:7px 10px; min-width:80px}
+    .btn-danger{background:#ff4b6f; color:#fff; border-color:transparent}
+
     input[type=text]{
       width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
       background:#0f1116; color:#e8eef3; font-size:14px; line-height:1;
@@ -54,19 +57,30 @@
 
     /* SESSION LAYOUT */
     .session{
-      height:100dvh; width:100vw; display:grid; gap:0;
-      grid-template-columns: 1fr 1fr; grid-template-rows: 1fr;
+      height:100dvh; width:100vw;
+      display:grid; gap:0;
+      grid-template-columns: 2fr 1fr;  /* big YouTube, smaller call */
+      grid-template-rows:1fr;
       position:fixed; inset:0;
     }
-    @media (max-width: 680px){
-      .session{ grid-template-columns:1fr; grid-template-rows:1fr 1fr; }
+    @media (max-width: 768px){
+      .session{
+        grid-template-columns:1fr;
+        grid-template-rows: 3fr 2fr; /* YouTube top, call bottom */
+      }
     }
     .left,.right{min-width:0; min-height:0}
 
     /* YOUTUBE PANE */
     .left{position:relative; background:#000}
-    .ytWrap{position:absolute; inset:0; background:#000; overflow:hidden}
-    #ytPlayer{width:100%; height:100%; border:0;}
+    .ytWrap{
+      position:absolute; inset:0;
+      background:#000; overflow:hidden;
+    }
+    #ytPlayer{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+    }
 
     .badges{
       position:absolute; top:8px; left:8px; display:flex; gap:6px; z-index:2;
@@ -76,6 +90,7 @@
       background:rgba(0,0,0,.45); color:#eaf2f7; border:1px solid rgba(255,255,255,.12);
       padding:4px 8px; border-radius:999px; font-size:12px; backdrop-filter:saturate(120%) blur(6px);
     }
+
     .urlBar{
       position:absolute; bottom:10px; left:10px; right:10px; z-index:3;
       display:flex; gap:8px; pointer-events:auto;
@@ -87,52 +102,78 @@
       display:flex; flex-direction:column; background:var(--panel);
       border-left:1px solid var(--border);
     }
-    @media (max-width: 680px){
-      .right{border-left:none; border-top:1px solid var(--border);}
+    @media (max-width: 768px){
+      .right{
+        border-left:none; border-top:1px solid var(--border);
+      }
     }
+
     .callPane{
       flex:1; position:relative; padding:10px;
       display:flex; flex-direction:column; gap:10px;
     }
-    .videoGrid{
-      flex:1; display:flex; flex-direction:column; gap:10px;
-    }
-    .remoteVideoWrap, .localVideoWrap{
-      position:relative; background:#000; border-radius:12px; overflow:hidden;
-      border:1px solid var(--border);
+
+    .videoArea{
       flex:1;
+      position:relative;
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      background:#000;
       display:flex; align-items:center; justify-content:center;
     }
-    .localVideoWrap{
-      max-height:40%;
-    }
-    video{
+
+    #remoteVideo{
       width:100%; height:100%; object-fit:cover; background:#000;
     }
+
+    /* your own camera small overlay */
+    .selfOverlay{
+      position:absolute;
+      bottom:10px; right:10px;
+      width:28%; max-width:160px;
+      aspect-ratio:16/9;
+      border-radius:10px;
+      border:2px solid rgba(255,255,255,.65);
+      overflow:hidden;
+      background:#000;
+      box-shadow:0 4px 10px rgba(0,0,0,.7);
+    }
+    #localVideo{
+      width:100%; height:100%; object-fit:cover; background:#000;
+    }
+
     .label{
-      position:absolute; top:6px; left:8px; padding:2px 6px; border-radius:999px;
-      background:rgba(0,0,0,.6); color:#f1f5f9; font-size:11px;
+      position:absolute; top:6px; left:8px; padding:2px 7px; border-radius:999px;
+      background:rgba(0,0,0,.7); color:#f1f5f9; font-size:11px;
+      z-index:2;
     }
+    .selfLabel{
+      position:absolute; bottom:14px; left:14px; padding:2px 7px; border-radius:999px;
+      background:rgba(0,0,0,.75); color:#f8fafc; font-size:11px;
+      z-index:3;
+    }
+
     .controls{
-      display:flex; gap:8px; justify-content:center; padding-top:4px;
-    }
-    .btn-danger{
-      background:#ff4b6f; border-color:transparent; color:#fff;
+      display:flex; gap:8px; justify-content:center; padding-top:4px; flex-wrap:wrap;
     }
     .hint{
       text-align:center; font-size:12px; color:var(--muted);
     }
   </style>
 
+  <!-- PeerJS for P2P + WebRTC -->
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <!-- YouTube IFrame API -->
   <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
 
+<!-- CONNECT SCREEN -->
 <section id="connectScreen" class="connectScreen">
   <div class="connect">
-    <div class="title">📺 YouTube Watch + Call</div>
-    <div class="sub">Host loads a YouTube link, both see the video in sync and talk over video call.</div>
+    <div class="title">🎬 Watch YouTube + Video Call</div>
+    <div class="sub">Host pastes a YouTube link. Both see it in sync and talk with camera + mic.</div>
 
     <button id="createBtn" class="btn btn-primary">Create Room (Host)</button>
 
@@ -145,6 +186,7 @@
   </div>
 </section>
 
+<!-- MAIN SESSION -->
 <section id="sessionScreen" class="session hidden">
   <!-- LEFT: YOUTUBE -->
   <div class="left">
@@ -163,81 +205,86 @@
     </div>
   </div>
 
-  <!-- RIGHT: VIDEO CALL -->
+  <!-- RIGHT: VIDEO CALL (CAMERA + VOICE) -->
   <div class="right">
     <div class="callPane">
-      <div class="videoGrid">
-        <div class="remoteVideoWrap">
-          <span class="label">Peer</span>
-          <video id="remoteVideo" playsinline autoplay></video>
-        </div>
-        <div class="localVideoWrap">
-          <span class="label">You</span>
+      <div class="videoArea">
+        <span class="label">Peer</span>
+        <video id="remoteVideo" playsinline autoplay></video>
+
+        <div class="selfOverlay">
           <video id="localVideo" muted playsinline autoplay></video>
         </div>
+        <span class="selfLabel">You</span>
       </div>
+
       <div class="controls">
         <button id="startCallBtn" class="btn btn-primary btn-sm">Start Call</button>
         <button id="toggleMuteBtn" class="btn btn-sm">Mute</button>
         <button id="toggleCamBtn" class="btn btn-sm">Camera Off</button>
-        <button id="endCallBtn" class="btn btn-danger btn-sm">End</button>
+        <button id="endCallBtn"   class="btn btn-danger btn-sm">End</button>
       </div>
       <div class="hint">
-        Join → hit “Start Call” → host pastes YouTube link → both watch & talk.
+        1) Create / Join → 2) Click “Start Call” (allow camera & mic) → 3) Host pastes YouTube link.
       </div>
     </div>
   </div>
 </section>
 
 <script>
-  // === Shortcuts & elements ===
+  // ---------- ELEMENTS ----------
   const $ = id => document.getElementById(id);
-  const connectScreen = $('connectScreen');
-  const sessionScreen = $('sessionScreen');
-  const roleBadge = $('roleBadge');
-  const statusBadge = $('statusBadge');
-  const connectLog = $('connectLog');
-  const urlBar = $('urlBar');
-  const ytInput = $('ytInput');
-  const loadBtn = $('loadBtn');
 
-  const localVideo = $('localVideo');
-  const remoteVideo = $('remoteVideo');
-  const startCallBtn = $('startCallBtn');
-  const toggleMuteBtn = $('toggleMuteBtn');
-  const toggleCamBtn = $('toggleCamBtn');
-  const endCallBtn = $('endCallBtn');
+  const connectScreen  = $('connectScreen');
+  const sessionScreen  = $('sessionScreen');
+  const roleBadge      = $('roleBadge');
+  const statusBadge    = $('statusBadge');
+  const connectLog     = $('connectLog');
+  const urlBar         = $('urlBar');
+  const ytInput        = $('ytInput');
+  const loadBtn        = $('loadBtn');
 
+  const localVideo     = $('localVideo');
+  const remoteVideo    = $('remoteVideo');
+  const startCallBtn   = $('startCallBtn');
+  const toggleMuteBtn  = $('toggleMuteBtn');
+  const toggleCamBtn   = $('toggleCamBtn');
+  const endCallBtn     = $('endCallBtn');
+
+  const roomIdInput    = $('roomId');
+  const createBtn      = $('createBtn');
+  const joinBtn        = $('joinBtn');
+
+  // ---------- STATE ----------
   let peer, conn;
   let isHost = false;
-  let roomIdInput = $('roomId');
 
-  // WebRTC / PeerJS media
-  let localStream = null;
-  let currentCall = null;
+  // media
+  let localStream  = null;
+  let currentCall  = null;
 
   // YouTube
-  let player = null;
-  let ytReady = false;
+  let player       = null;
+  let ytReady      = false;
   let currentVideoId = null;
-  let isSeeking = false;
 
-  // === UI helpers ===
+  // ---------- UI HELPERS ----------
   function showConnect(msg){ connectLog.textContent = msg || ''; }
   function setStatus(text){ statusBadge.textContent = text; }
 
   function toSession(role){
     connectScreen.classList.add('hidden');
     sessionScreen.classList.remove('hidden');
+
     roleBadge.textContent = role === 'host' ? 'Host' : 'Guest';
-    urlBar.style.display = role === 'host' ? 'flex' : 'none';
+    urlBar.style.display  = role === 'host' ? 'flex' : 'none';
   }
 
-  // === YouTube IFrame API ===
+  // ---------- YOUTUBE ----------
   window.onYouTubeIframeAPIReady = function(){
     player = new YT.Player('ytPlayer', {
       height: '100%',
-      width: '100%',
+      width:  '100%',
       videoId: '',
       playerVars:{
         controls:1,
@@ -263,21 +310,18 @@
     const state = e.data;
     const t = player.getCurrentTime();
 
-    // PLAYING or PAUSED → send sync with current time
     if (state === YT.PlayerState.PLAYING){
-      conn.send({type:'sync', action:'play', time:t, vid:currentVideoId});
+      conn.send({type:'sync', action:'play',  time:t, vid:currentVideoId});
     } else if (state === YT.PlayerState.PAUSED){
       conn.send({type:'sync', action:'pause', time:t, vid:currentVideoId});
     }
   }
 
   function parseYouTubeId(urlOrId){
-    // Accept raw ID or full URL
     if (!urlOrId) return null;
     const idRegex = /(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{6,})/;
     const m = urlOrId.match(idRegex);
     if (m && m[1]) return m[1];
-    // if looks like bare id
     if (/^[A-Za-z0-9_-]{6,}$/.test(urlOrId)) return urlOrId;
     return null;
   }
@@ -293,7 +337,9 @@
     currentVideoId = vid;
     setStatus('Loading…');
     player.loadVideoById(vid);
-    conn && conn.send({type:'cmd', cmd:'load', vid});
+    if (conn){
+      conn.send({type:'cmd', cmd:'load', vid});
+    }
   }
 
   function guestLoadVideo(vid){
@@ -304,20 +350,17 @@
   }
 
   function applySync(msg){
-    if (!ytReady || !currentVideoId) return;
+    if (!ytReady) return;
 
-    // If host changed video, sync to same one
     if (msg.vid && msg.vid !== currentVideoId){
       currentVideoId = msg.vid;
       player.loadVideoById(currentVideoId);
     }
 
     const target = msg.time || 0;
-    const diff = Math.abs(player.getCurrentTime() - target);
+    const diff   = Math.abs(player.getCurrentTime() - target);
     if (diff > 0.5){
-      isSeeking = true;
       player.seekTo(target, true);
-      setTimeout(()=>{ isSeeking = false; }, 300);
     }
 
     if (msg.action === 'play'){
@@ -327,12 +370,13 @@
     }
   }
 
-  // === PeerJS connect flow ===
-  $('createBtn').onclick = () => {
+  // ---------- PEERJS CONNECT FLOW ----------
+  createBtn.onclick = () => {
     isHost = true;
     peer = new Peer();
     peer.on('open', id => {
       showConnect('Room ID: ' + id);
+      setupCallHandlers();
     });
     peer.on('connection', c => {
       conn = c;
@@ -341,7 +385,7 @@
     });
   };
 
-  $('joinBtn').onclick = tryJoin;
+  joinBtn.onclick = tryJoin;
   roomIdInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') tryJoin();
   });
@@ -356,6 +400,7 @@
     isHost = false;
     peer = new Peer();
     peer.on('open', () => {
+      setupCallHandlers();
       conn = peer.connect(id);
       conn.on('open', () => {
         wireConnection();
@@ -377,16 +422,17 @@
     });
   }
 
-  // === Media (WebRTC) ===
+  // ---------- MEDIA (CAMERA + VOICE) ----------
   async function ensureLocalStream(){
     if (localStream) return localStream;
     try{
+      // CAMERA + MIC (this is the “talk + see each other” part)
       localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
       localVideo.srcObject = localStream;
       return localStream;
     }catch(err){
       console.error('getUserMedia error', err);
-      alert('Could not access camera/microphone.');
+      alert('Could not access camera/microphone. Check permissions / HTTPS.');
       throw err;
     }
   }
@@ -402,8 +448,9 @@
     }
   }
 
-  // Host answers calls
+  // host answers incoming call
   function setupCallHandlers(){
+    if (!peer) return;
     peer.on('call', async call => {
       try{
         const stream = await ensureLocalStream();
@@ -419,10 +466,10 @@
     });
   }
 
-  // Guest starts call to host
+  // guest (or anyone) starts call to the other side
   async function startCall(){
     if (!peer || !conn) return;
-    const targetId = conn.peer; // host's PeerJS id
+    const targetId = conn.peer;
     try{
       const stream = await ensureLocalStream();
       const call = peer.call(targetId, stream);
@@ -436,19 +483,14 @@
     }
   }
 
-  // === Buttons ===
+  // ---------- BUTTONS ----------
   loadBtn.onclick = hostLoadVideo;
 
   startCallBtn.onclick = async () => {
     if (!peer) return;
-    setupCallHandlers();
-    // Guest initiates call (host will only answer)
-    if (!isHost){
-      await startCall();
-    }else{
-      // host wants to see self even before call
-      await ensureLocalStream();
-    }
+    // both sides set up handlers; the one who clicks Start will call the peer
+    if (!localStream) await ensureLocalStream();
+    await startCall();
   };
 
   toggleMuteBtn.onclick = () => {
@@ -471,14 +513,6 @@
 
   endCallBtn.onclick = () => {
     cleanupCall();
-  };
-
-  // Init: when peer is created, also prep call handlers
-  const origPeer = Peer;
-  Peer = function(...args){
-    const p = new origPeer(...args);
-    p.on('open', ()=>{ setupCallHandlers(); });
-    return p;
   };
 </script>
 </body>
