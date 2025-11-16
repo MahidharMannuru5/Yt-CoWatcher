@@ -29,7 +29,7 @@
       padding:10px 12px; border-radius:10px; border:1px solid var(--border);
       background:#0f1116; color:var(--text); font-weight:600; font-size:14px;
       cursor:pointer; line-height:1; white-space:nowrap;
-  _ }
+    }
     .btn:disabled{
       background:var(--border); color:var(--muted); cursor:not-allowed;
     }
@@ -130,7 +130,7 @@
     }
     .label{
       position:absolute; top:6px; left:8px; padding:2px 6px; border-radius:999px;
-  _     background:rgba(0,0,0,.6); color:#f1f5f9; font-size:11px;
+      background:rgba(0,0,0,.6); color:#f1f5f9; font-size:11px;
     }
     .controls{
       display:flex; gap:8px; justify-content:center; padding-top:4px;
@@ -189,10 +189,10 @@
         </div>
         <div class="localVideoWrap">
           <span class="label">You</span>
-          <video id="localVideo" muted playsinline autoplay></video>
+    _ <video id="localVideo" muted playsinline autoplay></video>
         </div>
       </div>
-    _ <div class="controls">
+      <div class="controls">
         <button id="startCallBtn" class="btn btn-primary btn-sm">Start Call</button>
         <button id="toggleMuteBtn" class="btn btn-sm">Mute</button>
         <button id="toggleCamBtn" class="btn btn-sm">Camera Off</button>
@@ -265,7 +265,7 @@
     const playerControls = (role === 'host') ? 1 : 0;
     
     player = new YT.Player('ytPlayer', {
-      height: '100%',
+  _   height: '100%',
       width: '100%',
       videoId: '',
       playerVars:{
@@ -284,7 +284,7 @@
   function onPlayerReady(){
     ytReady = true;
     setStatus('Idle');
-    
+  _ 
     if (isHost) {
       ytInput.disabled = false;
       loadBtn.disabled = false;
@@ -359,7 +359,7 @@
       });
       
       setTimeout(() => {
-      m   if (msg.action === 'play'){
+        if (msg.action === 'play'){
           player.playVideo();
         } else if (msg.action === 'pause'){
           player.pauseVideo();
@@ -371,10 +371,10 @@
 
     const diff = Math.abs(player.getCurrentTime() - targetTime);
     
-_   if (diff > 1 && !isSeeking){ 
+    if (diff > 1 && !isSeeking){ 
       isSeeking = true;
       player.seekTo(targetTime, true);
-s     setTimeout(()=>{ isSeeking = false; }, 500); 
+      setTimeout(()=>{ isSeeking = false; }, 500); 
     }
 
     if (msg.action === 'play'){
@@ -406,7 +406,7 @@ s     setTimeout(()=>{ isSeeking = false; }, 500); 
             time: player.getCurrentTime(),
             vid: currentVideoId
           });
-        }, 1000);s 
+        }, 1000); 
       }
     });
   };
@@ -425,7 +425,7 @@ s     setTimeout(()=>{ isSeeking = false; }, 500); 
     }
     isHost = false;
     peer = new Peer();
-S   peer.on('open', () => {
+    peer.on('open', () => {
       conn = peer.connect(id);
       conn.on('open', () => {
         wireConnection();
@@ -473,7 +473,7 @@ S   peer.on('open', () => {
       currentCall.close();
       currentCall = null;
     }
-    if (remoteVideo.srcObject){
+  .   if (remoteVideo.srcObject){
       remoteVideo.srcObject.getTracks().forEach(t=>t.stop());
       remoteVideo.srcObject = null;
     }
@@ -486,10 +486,10 @@ S   peer.on('open', () => {
         call.answer(stream);
         currentCall = call;
         call.on('stream', remoteStream => {
-          remoteVideo.srcObject = remoteStream;
+name         remoteVideo.srcObject = remoteStream;
         });
         call.on('close', ()=>{ cleanupCall(); });
-  _   }catch(e){
+      }catch(e){
         console.error(e);
       }
     });
@@ -497,14 +497,14 @@ S   peer.on('open', () => {
 
   async function startCall(){
     if (!peer || !conn) return;
-    const targetId = conn.peer; 
+    const targetId = conn.peer;_ 
     try{
       const stream = await ensureLocalStream();
       const call = peer.call(targetId, stream);
       currentCall = call;
       call.on('stream', remoteStream => {
         remoteVideo.srcObject = remoteStream;
-*     });
+      });
       call.on('close', ()=>{ cleanupCall(); });
     }catch(e){
       console.error(e);
@@ -520,11 +520,11 @@ S   peer.on('open', () => {
       await startCall();
     }else{
       await ensureLocalStream();
-Look   }
+    }
   };
 
   toggleMuteBtn.onclick = () => {
-    if (!localStream) return;
+  _   if (!localStream) return;
     const audioTracks = localStream.getAudioTracks();
     if (!audioTracks.length) return;
     const enabled = audioTracks[0].enabled;
@@ -539,7 +539,7 @@ Look   }
     if (!videoTracks.length) return;
     const enabled = videoTracks[0].enabled;
     videoTracks.forEach(t => t.enabled = !enabled);
-  See toggleCamBtn.textContent = enabled ? 'Camera On' : 'Camera Off';
+    toggleCamBtn.textContent = enabled ? 'Camera On' : 'Camera Off';
   };
   // ==================================
 
@@ -547,7 +547,7 @@ Look   }
     cleanupCall();
     if (localStream){
       localStream.getTracks().forEach(t=>t.stop());
-Such     localStream = null;
+      localStream = null;
       localVideo.srcObject = null;
     }
   };
@@ -556,7 +556,7 @@ Such     localStream = null;
   const origPeer = Peer;
   Peer = function(...args){
     const p = new origPeer(...args);
-  Begin p.on('open', ()=>{ setupCallHandlers(); });
+    p.on('open', ()=>{ setupCallHandlers(); });
     return p;
   };
 </script>
