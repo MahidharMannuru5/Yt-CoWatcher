@@ -402,7 +402,7 @@
     }
   }
 
-  // Host & guest answer incoming calls
+  // Host answers calls
   function setupCallHandlers(){
     peer.on('call', async call => {
       try{
@@ -411,7 +411,6 @@
         currentCall = call;
         call.on('stream', remoteStream => {
           remoteVideo.srcObject = remoteStream;
-          remoteVideo.play().catch(()=>{});   // 🔧 FIX: ensure remote starts
         });
         call.on('close', ()=>{ cleanupCall(); });
       }catch(e){
@@ -420,17 +419,16 @@
     });
   }
 
-  // Either side can start the call
+  // Guest starts call to host
   async function startCall(){
     if (!peer || !conn) return;
-    const targetId = conn.peer; // other PeerJS id
+    const targetId = conn.peer; // host's PeerJS id
     try{
       const stream = await ensureLocalStream();
       const call = peer.call(targetId, stream);
       currentCall = call;
       call.on('stream', remoteStream => {
         remoteVideo.srcObject = remoteStream;
-        remoteVideo.play().catch(()=>{});     // 🔧 FIX: ensure remote starts
       });
       call.on('close', ()=>{ cleanupCall(); });
     }catch(e){
@@ -441,13 +439,16 @@
   // === Buttons ===
   loadBtn.onclick = hostLoadVideo;
 
-  // 🔧 FIX: anyone who has a connection can start the call
   startCallBtn.onclick = async () => {
-    if (!peer || !conn){
-      alert('Create / Join a room first.');
-      return;
+    if (!peer) return;
+    setupCallHandlers();
+    // Guest initiates call (host will only answer)
+    if (!isHost){
+      await startCall();
+    }else{
+      // host wants to see self even before call
+      await ensureLocalStream();
     }
-    await startCall();
   };
 
   toggleMuteBtn.onclick = () => {
@@ -468,7 +469,7 @@
     toggleCamBtn.textContent = enabled ? 'Camera On' : 'Camera Off';
   };
 
-  endCallBtn.onclick = () =>{
+  endCallBtn.onclick = () => {
     cleanupCall();
   };
 
